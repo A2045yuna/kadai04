@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>Firebase_version9_RealtimeDB(G'sACADEMY初学者用サンプル)</title>
+  </head>
+  <body>
+    <!-- コンテンツ表示画面 -->
+
+    <div>
+      <div>名前：<input type="text" id="uname" /></div>
+      <div>
+        <textarea id="text" cols="30" rows="10"></textarea>
+        <button id="send">送信</button>
+      </div>
+      <div id="output" style="overflow: auto; height: 300px"></div>
+      <!-- 300pxを超えると自動でスクロールモードにする -->
+    </div>
+    <!--/ コンテンツ表示画面 -->
+
+    <!-- JQuery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <!-- JQuery -->
+
+    <!--** 以下Firebase **-->
+    <script type="module">
+      // Import the functions you need from the SDKs you need
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+      import {
+        getDatabase,
+        ref,
+        push,
+        set,
+        onChildAdded,
+        update,
+        remove,
+        onChildRemoved,
+        onChildChanged, //ここで宣言した関数しか使えない
+      } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+      // TODO: Add SDKs for Firebase products that you want to use
+      // https://firebase.google.com/docs/web/setup#available-libraries
+
+      // Your web app's Firebase configuration
+      const firebaseConfig = {
+        apiKey: "AIzaSyBaNaHQWWHBI8JLOQEkTEdc3eaMg2CazQI",
+        authDomain: "sample-e1e3d.firebaseapp.com",
+        projectId: "sample-e1e3d",
+        storageBucket: "sample-e1e3d.appspot.com",
+        messagingSenderId: "30734788478",
+        appId: "1:30734788478:web:25402edd4114e93af5352f",
+      }; // firebaseConfigというオブジェクトにキーを入れる
+
+      // Initialize Firebase
+      const app = initializeApp(firebaseConfig); //キーを持って実行する、firebaseにアクセスする
+      const db = getDatabase(app); // rtdbに接続する
+      const dbRef = ref(db, "chat"); // 階層を指定 chat/memo1など
+
+      // データ登録
+      $("#send").on("click", function () {
+        let now = new Date();
+        let hour = now.getHours();
+        let minute = now.getMinutes();
+        // オブジェクトを作る
+        const msg = {
+          uname: $("#uname").val(),
+          text: $("#text").val(),
+          hour: hour,
+          minute : minute
+        };
+        const newPostRef = push(dbRef, msg); // 送るデータにユニークキーを生成 チャットアプリにおいては重要。固定のパスに上書き保存したい場合はキーを生成せず、dbRefでパスを指定、それをset関数で送る
+        console.dir(newPostRef);
+        console.dir(msg);
+        // set(newPostRef, msg); // ユニークキーと格納したいオブジェクトを渡す
+      });
+
+      // 最初にデータ取得＋onSnapshotでリアルタイムにデータを取得
+      onChildAdded(dbRef, function (data) {
+        const msg = data.val(); // オブジェクトにいれる
+        const key = data.key; // 削除・更新に必須
+        console.log(msg.time);
+        let h = `<p id = '${key}'>`;
+        h += `${msg.hour}:${msg.minute}`;
+        h += '<br>';
+        h += msg.uname;
+        h += '<br>';
+        h += `<span contentEditable = 'true' id = '${key}_update'>${msg.text}</span>`;
+        h += `<span class = 'remove' data-key = '${key}'>   🚮  </span>`;
+        h += `<span class = 'update' data-key = '${key}'>   🆙  </span>`;
+        h += '</p>';
+        $("#output").prepend(h);
+      });
+
+      // 削除イベント
+      $("#output").on("click", ".remove", function () {
+        // removeクラスのクリックイベントを感知
+        const key = $(this).attr("data-key"); // this:クラス内にある「この」要素  attr:属性(attribute) ここでは削除ボタンに埋め込んである'data-key'
+        const remove_item = ref(db, `chat/${key}`); // 削除したいデータの階層を指定
+        remove(remove_item); // firebaseデータ削除関数
+      });
+
+      // 更新イベント
+      $("#output").on("click", ".update", function () {
+        const key = $(this).attr("data-key");
+        update(ref(db, `chat/${key}`), {
+          text: $(`#${key}_update`).html(),
+        });
+      });
+
+      // 削除処理がfirebase側で実行されたらイベント発生
+      onChildRemoved(dbRef, (data) => {
+        $(`#${data.key}`).remove(); // DOM操作関数（対象を削除）
+      });
+
+      // 更新処理がfirebase側で実行されたらイベント発生
+      onChildChanged(dbRef, (data) => {
+        text: $(`#${data.key}_update`).html(data.val().text);
+        console.log(data.val().text);
+      });
+    </script>
+  </body>
+</html>
