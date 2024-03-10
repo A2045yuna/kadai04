@@ -1,0 +1,24 @@
+img{
+    width: 300px;
+    height: 300px;
+}
+
+.timename{
+    font-size: 12px;
+    font-weight: lighter;
+}
+
+span{
+    background-color:#BED1CF;
+    border-radius: 5px;
+    padding: 5px;
+}
+
+body{
+    background-color: #FFF7F1;
+    width: 500px;
+}
+
+button{
+    background-color: #FFE4C9;
+}
